@@ -5,12 +5,14 @@ export default function AuthButton({ onAuth }) {
   const [user, setUser] = useState(null)
 
   useEffect(() => {
+    // Get the current session on load
     supabase.auth.getSession().then(({ data }) => {
       const u = data?.session?.user ?? null
       setUser(u)
       onAuth?.(u)
     })
 
+    // Listen for future auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null
       setUser(u)
@@ -20,12 +22,26 @@ export default function AuthButton({ onAuth }) {
     return () => listener?.subscription.unsubscribe()
   }, [])
 
+  // Login handler
   const login = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google' })
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://wiradjuri.github.io/flickforecast/'
+      }
+    })
+
+    if (error) {
+      console.error('Google login failed:', error.message)
+    }
   }
 
+  // Logout handler
   const logout = async () => {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('Logout failed:', error.message)
+    }
   }
 
   return (
