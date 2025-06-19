@@ -5,14 +5,14 @@ export default function AuthButton({ onAuth }) {
   const [user, setUser] = useState(null)
 
   useEffect(() => {
-    // Get the current session on load
+    // Get current session on load
     supabase.auth.getSession().then(({ data }) => {
       const u = data?.session?.user ?? null
       setUser(u)
       onAuth?.(u)
     })
 
-    // Listen for future auth state changes
+    // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null
       setUser(u)
@@ -22,12 +22,15 @@ export default function AuthButton({ onAuth }) {
     return () => listener?.subscription.unsubscribe()
   }, [])
 
-  // Login handler
   const login = async () => {
+    const isLocalhost = window.location.hostname === 'localhost'
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://wiradjuri.github.io/flickforecast/'
+        redirectTo: isLocalhost
+          ? 'http://localhost:5173/'
+          : 'https://wiradjuri.github.io/flickforecast/'
       }
     })
 
@@ -36,7 +39,6 @@ export default function AuthButton({ onAuth }) {
     }
   }
 
-  // Logout handler
   const logout = async () => {
     const { error } = await supabase.auth.signOut()
     if (error) {
